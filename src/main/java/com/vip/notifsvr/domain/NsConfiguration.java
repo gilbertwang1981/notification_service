@@ -23,6 +23,9 @@ public class NsConfiguration {
 	private Integer zkClientTmo;
 	private Integer tcpMaxIdle;
 	private String brokers;
+	private String reportTopic;
+	private String loginTopic;
+	private String logoutTopic;
 	
 	@Override
 	public String toString(){
@@ -47,7 +50,10 @@ public class NsConfiguration {
 				"redis time between evica run:" + this.redisTimeBetweenEvicaRun + "\n" +
 				"ZK host:" + this.zkHost + "\n" +
 				"ZK timeout:" + this.zkClientTmo + "\n" +
-				"KAFKA brokers:" + this.brokers;
+				"KAFKA brokers:" + this.brokers + "\n" + 
+				"Report Topic:" + this.reportTopic + "\n" +
+				"Login Topic:" + this.loginTopic + "\n" + 
+				"Logout Topic:" + this.logoutTopic;
 	}
 	
 	public Integer getBossThreads() {
@@ -185,5 +191,29 @@ public class NsConfiguration {
 
 	public void setBrokers(String brokers) {
 		this.brokers = brokers;
+	}
+
+	public String getReportTopic() {
+		return reportTopic;
+	}
+
+	public void setReportTopic(String reportTopic) {
+		this.reportTopic = reportTopic;
+	}
+
+	public String getLoginTopic() {
+		return loginTopic;
+	}
+
+	public void setLoginTopic(String loginTopic) {
+		this.loginTopic = loginTopic;
+	}
+
+	public String getLogoutTopic() {
+		return logoutTopic;
+	}
+
+	public void setLogoutTopic(String logoutTopic) {
+		this.logoutTopic = logoutTopic;
 	}
 }

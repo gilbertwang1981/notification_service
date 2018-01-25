@@ -48,7 +48,7 @@ public class NsHttpUtil {
 			}
 			httpResponse = httpclient.execute(request);
 		} catch (Exception e) {
-			logger.error("ClientProtocolException in request", e.getMessage());
+			logger.error("ClientProtocolException in request", e);
 			
 			return null;
 		}
@@ -56,11 +56,11 @@ public class NsHttpUtil {
 		return httpResponse;
 	}
 
-	public void finalize() {
+	public void destory() {
 		try {
 			httpclient.close();
 		} catch (IOException e) {
-			logger.error("syncHttpClient close error", e.getMessage());
+			logger.error("syncHttpClient close error", e);
 		}
 	}
 

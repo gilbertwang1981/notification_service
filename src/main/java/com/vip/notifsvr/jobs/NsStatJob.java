@@ -39,9 +39,9 @@ public class NsStatJob extends Thread {
 						InetAddress.getLocalHost().getHostName() , 
 						NotifyDeviceMgr.getInstance().getStatCtr(true).toString());
 				
-				RedisMgr.getInstance().set(NsConstDefinition.CTR_ONLINE_CTR + "_" + 
+				RedisMgr.getInstance().set(NsConstDefinition.CTR_ONLINE_HC + "_" + 
 						InetAddress.getLocalHost().getHostName() , 
-						NotifyDeviceMgr.getInstance().getOnlineCtr().toString());
+						Long.toString(System.currentTimeMillis()));
 			} catch (Exception e) {
 				logger.error("run [NsStatJob] Job failed:" + e.getMessage());
 			}

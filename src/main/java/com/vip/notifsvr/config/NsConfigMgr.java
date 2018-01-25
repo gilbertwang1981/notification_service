@@ -35,9 +35,9 @@ public class NsConfigMgr {
 	
 	public boolean initialize() {
 		try {
-			String uri = System.getenv("VIP_NS_CFG_URL");
+			String uri = System.getenv("VIPNS_CFG_URL");
 			if (uri == null) {
-				logger.error("the env [VIP_NS_CFG_URL] should be set.");
+				logger.error("the env [VIPNS_CFG_URL] should be set.");
 				
 				return false;
 			}
@@ -52,7 +52,7 @@ public class NsConfigMgr {
 			
 			HttpEntity httpEntity = response.getEntity();  
             String result = EntityUtils.toString(httpEntity);
-            NsHttpUtil.getInstance().finalize();
+            NsHttpUtil.getInstance().destory();
             
             mapper.configure(Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
             NsCfgObject cfg = mapper.readValue(result , NsCfgObject.class);
@@ -73,11 +73,6 @@ public class NsConfigMgr {
 				return false;
 			}
 			
-			NsConfigFactory zkFactory = new ZkConfigFactory();
-			if (zkFactory.create(config , cf) == null) {
-				return false;
-			}
-			
 			NsConfigFactory kafkaFactory = new KafkaConfigFactory();
 			if (kafkaFactory.create(config , cf) == null) {
 				return false;
@@ -85,7 +80,7 @@ public class NsConfigMgr {
 			
 			return true;
 		} catch (Exception e) {
-			logger.error("exception caught:" + e.getMessage());
+			logger.error("exception caught", e);
 			
 			return false;
 		} 

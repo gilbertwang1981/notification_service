@@ -6,7 +6,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vip.notifsvr.config.NsConfigMgr;
+import com.vip.notifsvr.consts.NsConstDefinition;
+import com.vip.notifsvr.domain.NsNotifyObject;
+import com.vip.notifsvr.kafka.KafkaMgr;
 import com.vip.notifsvr.redis.RedisMgr;
+import com.vip.notifsvr.util.NsDLockUtil;
 
 import io.netty.channel.Channel;
 import io.netty.util.internal.StringUtil;
@@ -21,7 +27,7 @@ public class NotifyDeviceMgr {
 	private AtomicLong successCtr = new AtomicLong(0);
 	private AtomicLong failCtr = new AtomicLong(0);
 	
-	private AtomicLong onlineCtr = new AtomicLong(0);
+	private ObjectMapper mapper = new ObjectMapper();
 	
 	public static NotifyDeviceMgr getInstance(){
 		if (instance == null) {
@@ -31,20 +37,34 @@ public class NotifyDeviceMgr {
 		return instance;
 	}
 	
-	public void online() {
-		if (onlineCtr.incrementAndGet() > (Long.MAX_VALUE - 1)) {
-			onlineCtr.set(0);
+	public void online(String deviceToken) {
+		NsNotifyObject notify = new NsNotifyObject();
+		notify.setDeviceToken(deviceToken);
+		notify.setTimestamp(System.currentTimeMillis());
+		
+		try {
+			if (!KafkaMgr.getInstance().publish(
+					NsConfigMgr.getInstance().getConfig().getLoginTopic() , mapper.writeValueAsString(notify))) {
+				logger.warn("notify login event failed." + deviceToken);
+			}
+		} catch (Exception e) {
+			logger.warn("Json exception:" + e);
 		}
 	}
 	
-	public void offline(){
-		if (onlineCtr.decrementAndGet() <= 0) {
-			onlineCtr.set(0);
+	public void offline(String deviceToken){		
+		NsNotifyObject notify = new NsNotifyObject();
+		notify.setDeviceToken(deviceToken);
+		notify.setTimestamp(System.currentTimeMillis());
+		
+		try {
+			if (!KafkaMgr.getInstance().publish(
+					NsConfigMgr.getInstance().getConfig().getLogoutTopic() , mapper.writeValueAsString(notify))) {
+				logger.warn("notify logout event failed." + deviceToken);
+			}
+		} catch (Exception e) {
+			logger.warn("Json exception:" + e);
 		}
-	}
-	
-	public Long getOnlineCtr() {
-		return onlineCtr.get();
 	}
 	
 	public void increase(boolean isSuccess){
@@ -68,27 +88,48 @@ public class NotifyDeviceMgr {
 	}
 	
 	public boolean registerDevice(NotifyDevice device){
+		if (!NsDLockUtil.getInstance().lock(NsConstDefinition.NS_DLOCK_PREFIX + device.getDeviceToken() ,  
+				NsConstDefinition.NS_DLOCK_MAX_EXPIRED)){
+			logger.warn("register - Got lock failed. close socket, app will be reconnected." + device.getDeviceToken());
+			
+			return false;
+		}
+		
+		if (devices.containsKey(device.getDeviceToken())) {
+			try {
+				devices.get(device.getDeviceToken()).getChannel().close();
+			} catch (Exception e) {
+				logger.warn("close socket failed." + e);
+			}
+			
+			if (!NsDLockUtil.getInstance().unlock(NsConstDefinition.NS_DLOCK_PREFIX + device.getDeviceToken())){
+				logger.warn("register device - unlock failed." + device.getDeviceToken());
+			}
+			
+			return false;
+		}
+		
+		if (!RedisMgr.getInstance().set(device.getDeviceToken() , Integer.toString(device.getPnsId()))){
+			logger.warn("register the device token from the redis failed." + device.getDeviceToken());
+			
+			if (!NsDLockUtil.getInstance().unlock(NsConstDefinition.NS_DLOCK_PREFIX + device.getDeviceToken())){
+				logger.warn("register device - unlock failed." + device.getDeviceToken());
+			}
+			
+			return false;
+		}
+		
 		if (!devices.containsKey(device.getDeviceToken())) {
 			devices.put(device.getDeviceToken() , device);
 		} else {
 			devices.replace(device.getDeviceToken() , device);
 		}
 		
-		try {
-			if (!RedisMgr.getInstance().set(device.getDeviceToken() , Integer.toString(device.getPnsId()))){
-				logger.error("un-register the device token from the redis failed." + device.getDeviceToken());
-				
-				return false;
-			}
-			
-			logger.info("register device successfully." + device.getDeviceToken());
-		} catch (Exception e) {
-			logger.error("register device token into redis failed." + e.getMessage());
-			
-			return false;
+		if (!NsDLockUtil.getInstance().unlock(NsConstDefinition.NS_DLOCK_PREFIX + device.getDeviceToken())){
+			logger.warn("register - unlock failed." + device.getDeviceToken());
 		}
 		
-		online();
+		logger.info("register device successfully." + device.getDeviceToken());
 		
 		return true;
 	}
@@ -98,15 +139,18 @@ public class NotifyDeviceMgr {
 			return;
 		}
 		
-		if (!RedisMgr.getInstance().del(deviceToken)){
-			logger.error("un-register the device token from the redis failed." + deviceToken);
+		if (!NsDLockUtil.getInstance().lock(NsConstDefinition.NS_DLOCK_PREFIX + 
+				deviceToken,  NsConstDefinition.NS_DLOCK_MAX_EXPIRED)){
+			logger.warn("un-register - Got lock failed." + deviceToken);
 		}
 		
 		if (devices.remove(deviceToken) == null) {
-			logger.info("can not find the device in the memory map." + deviceToken);
+			logger.warn("can not find the device in the memory map." + deviceToken);
 		}
 		
-		offline();
+		if (!NsDLockUtil.getInstance().unlock(NsConstDefinition.NS_DLOCK_PREFIX + deviceToken)){
+			logger.warn("un-register - unlock failed." + deviceToken);
+		}
 		
 		logger.info("un-register device successfully." + deviceToken);
 	}

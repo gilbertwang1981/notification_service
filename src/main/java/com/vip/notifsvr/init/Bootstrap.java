@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.vip.notifsvr.codec.NsMessageDecoder;
 import com.vip.notifsvr.codec.NsMessageEncoder;
 import com.vip.notifsvr.config.NsConfigMgr;
+import com.vip.notifsvr.consts.NsConstDefinition;
 import com.vip.notifsvr.handler.NsMessageHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -36,7 +37,8 @@ public class Bootstrap {
             @Override
             public void initChannel(SocketChannel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
-                pipeline.addFirst("idleStateHandler", new IdleStateHandler(0, 0, 600));
+                pipeline.addFirst("idleStateHandler", new IdleStateHandler(0, 0, 
+                		NsConstDefinition.NS_IDLE_CHECKER_TIMEOUT));
                 pipeline.addLast("decoder", new NsMessageDecoder());
                 pipeline.addLast("encoder", new NsMessageEncoder());
                 pipeline.addLast("handler", new NsMessageHandler());

@@ -31,7 +31,7 @@ public class KafkaMgr {
 		props.put("bootstrap.servers" , NsConfigMgr.getInstance().getConfig().getBrokers());
 		props.put("key.serializer" , NsConstDefinition.KAFKA_KEY_SERIALIZER);  
         props.put("value.serializer" , NsConstDefinition.KAFKA_VALUE_SERIALIZER);
-		props.put("request.required.acks" , NsConstDefinition.KAFKA_NEED_ACK);
+		props.put("acks" , NsConstDefinition.KAFKA_NEED_ACK);
 		props.put("retries", NsConstDefinition.KAFKA_SENDER_RETRY_TIMES);
 		props.put("batch.size", NsConstDefinition.KAFKA_BATCH_SIZE);  
         props.put("linger.ms", NsConstDefinition.KAFKA_LINGER_TIME);  
@@ -46,7 +46,7 @@ public class KafkaMgr {
 		try {
 			return producer.send(new ProducerRecord<String , String>(topic , message)).isDone(); 
 		} catch (Exception e) {
-			logger.error("send to kafka failed," + e.getMessage());
+			logger.error("send to kafka failed", e);
 			
 			return false;
 		}

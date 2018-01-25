@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.vip.notifsvr.config.NsConfigMgr;
+
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 
@@ -48,7 +49,7 @@ public class RedisMgr {
 	private Set<HostAndPort> getHosts(){
 		Set<HostAndPort> hosts = new HashSet<HostAndPort>();
 		
-		StringTokenizer tokenizer = new StringTokenizer(NsConfigMgr.getInstance().getConfig().getRedisAddress() , ";");
+		StringTokenizer tokenizer = new StringTokenizer(NsConfigMgr.getInstance().getConfig().getRedisAddress() , ",");
 		while (tokenizer.hasMoreTokens()) {
 			String addr = tokenizer.nextToken();
 			
@@ -93,7 +94,7 @@ public class RedisMgr {
 			
 			return true;
 		} catch (Exception e) {
-			logger.error("redis cluster set exception:" + e.getMessage());
+			logger.error("redis cluster set exception:" + e.getMessage(), e);
 			
 			return false;
 		} 
@@ -105,7 +106,7 @@ public class RedisMgr {
 			
 			return true;
 		} catch (Exception e) {
-			logger.error("redis cluster set exception:" + e.getMessage());
+			logger.error("redis cluster set exception:" + e.getMessage(), e);
 			
 			return false;
 		} 		
@@ -115,9 +116,35 @@ public class RedisMgr {
 		try {
 			return redisCluster.get(key);
 		} catch (Exception e) {
-			logger.error("redis cluster get exception:" + e.getMessage());
+			logger.error("redis cluster get exception:" + e.getMessage(), e);
 			
 			return null;
+		}
+	}
+	
+	public boolean expire(String key , Integer seconds) {
+		try {
+			redisCluster.expire(key, seconds);
+			
+			return true;
+		} catch (Exception e) {
+			logger.error("redis cluster expire exception:" + e.getMessage(), e);
+			
+			return false;
+		}
+	}
+	
+	public boolean setnx(String key , String value) {
+		try {
+			if (redisCluster.setnx(key, value) == 1) {
+				return true;
+			}
+			
+			return false;
+		} catch (Exception e) {
+			logger.error("redis cluster expire exception:" + e.getMessage(), e);
+			
+			return false;
 		}
 	}
 	
@@ -127,7 +154,7 @@ public class RedisMgr {
 			
 			return true;
 		} catch (Exception e) {
-			logger.error("redis cluster del exception:" + e.getMessage());
+			logger.error("redis cluster del exception:" + e.getMessage(), e);
 			
 			return false;
 		}
@@ -137,7 +164,7 @@ public class RedisMgr {
 		try {
 			return redisCluster.exists(key);
 		} catch (Exception e) {
-			logger.error("redis cluster exists exception:" + e.getMessage());
+			logger.error("redis cluster exists exception:" + e.getMessage(), e);
 			
 			return false;
 		}

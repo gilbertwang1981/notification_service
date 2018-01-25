@@ -67,7 +67,7 @@ public class RabbitMqMgr {
 	            	PubMessage obj = mapper.readValue(new String(body, "UTF-8") , PubMessage.class);
 	            	
 	            	if (!Publisher.getInstance().publish(obj.getDeviceToken() , obj.getContent() , obj.getTopic())){
-	            		logger.error("publish message failed. " + obj.getDeviceToken() + "/" + obj.getContent());
+	            		logger.warn("publish message failed. " + obj.getDeviceToken() + "/" + obj.getContent());
 	            	}
 	            	
 	            	send2Kafka(obj);
@@ -79,7 +79,7 @@ public class RabbitMqMgr {
 			
 			return true;
 		} catch (Exception e) {
-			logger.error("start the consumer thread failed." + e.getMessage());
+			logger.error("start the consumer thread failed.", e);
 			
 			return false;
 		}
@@ -89,17 +89,18 @@ public class RabbitMqMgr {
 		PushMessageReport report = new PushMessageReport();
 		
 		report.setAppName(pub.getAppName());
-		report.setOs("2");
-		report.setStatus(2);
+		report.setOs(NsConstDefinition.NS_MOBILE_TYPE_ANDRIOD);
+		report.setStatus(NsConstDefinition.NS_MOBILE_FEEDBACK_STATUS_SUCCESS);
 		report.setPushId(Long.parseLong(pub.getMsgId()));
 		report.setCreateTime(new Date(System.currentTimeMillis()));
 		report.setLastUpdTime(new Date(System.currentTimeMillis()));
 		report.setMsgType(1);
 		
 		try {
-			KafkaMgr.getInstance().publish(NsConstDefinition.REPORT_KAFKA_TOPIC_NAME , mapper.writeValueAsString(report));
+			KafkaMgr.getInstance().publish(NsConfigMgr.getInstance().getConfig().getReportTopic() , 
+					mapper.writeValueAsString(report));
 		} catch (JsonProcessingException e) {
-			logger.error("json parser exception:" + e.getMessage());
+			logger.error("json parser exception:", e);
 			
 			return;
 		}

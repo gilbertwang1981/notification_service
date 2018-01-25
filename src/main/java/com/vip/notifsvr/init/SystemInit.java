@@ -1,5 +1,7 @@
 package com.vip.notifsvr.init;
 
+import java.lang.Thread.UncaughtExceptionHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,8 +11,8 @@ import com.vip.notifsvr.jobs.NsStatJob;
 import com.vip.notifsvr.kafka.KafkaMgr;
 import com.vip.notifsvr.mqtt.message.processer.ProcessorMgr;
 import com.vip.notifsvr.redis.RedisMgr;
+import com.vip.notifsvr.util.NsDLockUtil;
 import com.vip.notifsvr.util.NsHttpUtil;
-import com.vip.notifsvr.zookeeper.NsClusterZkAgent;
 import com.vip.notifsvr.notifier.Publisher;
 import com.vip.notifsvr.rabbitmq.RabbitMqMgr;
 
@@ -19,9 +21,20 @@ public class SystemInit {
 	
 	private static Logger logger = LoggerFactory.getLogger(SystemInit.class);
 	
+	public static class NSUncaughtExceptionHandler implements UncaughtExceptionHandler {
+
+		public void uncaughtException(final Thread t, final Throwable e) {
+			logger.error("uncaught exception in {}",
+					t.getName(), e);
+		}
+	}
+	
 	public static void main(String [] args) {
+		Thread.setDefaultUncaughtExceptionHandler(new NSUncaughtExceptionHandler());
+		
 		NotifyDeviceMgr.getInstance();
 		Publisher.getInstance();
+		NsDLockUtil.getInstance();
 		
 		NsHttpUtil.getInstance().initialize();
 		
@@ -54,18 +67,6 @@ public class SystemInit {
 			return;
 		}
 		
-		if (!NsClusterZkAgent.getInstance().connectZk()){
-			logger.error("connect to ZK failed.");
-			
-			return;
-		}
-		
-		if (!NsClusterZkAgent.getInstance().register()) {
-			logger.error("register to ZK failed.");
-			
-			return;
-		}
-
 		if (!serverBootstrap.initialize(NsConfigMgr.getInstance().getConfig().getServerPort())) {
 			logger.error("start server @ " + NsConfigMgr.getInstance().getConfig().getServerPort() + " failed.");
 		}

@@ -1,5 +1,4 @@
 package com.vip.notifsvr.codec;
-
 import com.vip.notifsvr.mqtt.proto.Message;
 
 import io.netty.buffer.ByteBuf;

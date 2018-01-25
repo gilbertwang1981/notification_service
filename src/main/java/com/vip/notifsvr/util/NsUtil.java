@@ -101,7 +101,7 @@ public class NsUtil {
             
             return jdkSuppliedAddress;
         } catch (Exception e) {
-            logger.error("exception happened:" + e.getMessage());
+            logger.error("exception happened:" + e.getMessage(), e);
         }
         return null;
     }
