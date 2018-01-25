@@ -32,9 +32,11 @@ public class Publisher {
 			
 			NotifyDeviceMgr.getInstance().increase(true);
 			
+			logger.info("send message success." + channel.toString() + "/" + deviceToken + "/" + content);
+			
 			return true;
 		} catch (Exception e) {
-			logger.error("send message failed." + channel.toString() + "/" + deviceToken, e);
+			logger.error("send message failed." + channel.toString() + "/" + deviceToken + "/" + content + e);
 			
 			NotifyDeviceMgr.getInstance().increase(false);
 			

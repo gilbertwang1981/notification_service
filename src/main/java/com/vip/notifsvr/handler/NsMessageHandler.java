@@ -24,21 +24,25 @@ public class NsMessageHandler extends SimpleChannelInboundHandler<Message> {
     }
     
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {    	
-    	Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);
-    	if (key != null && key.get() != null) {
-	    	logger.error("exception caught, the channel [target:" 
-					+ ctx.channel().id().asLongText() + " source channel:" + 
-					NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
-					+ "] could be closed." + cause);
-	    	
-	    	if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
-					ctx.channel().id().asLongText())) {
-				NotifyDeviceMgr.getInstance().removeDevice(key.get());
-			}
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    	try {
+	    	Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);
+	    	if (key != null && key.get() != null) {
+		    	logger.warn("exception caught, the channel [target:" 
+						+ ctx.channel().id().asLongText() + " source channel:" + 
+						NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
+						+ "] could be closed." + cause);
+		    	
+		    	if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
+						ctx.channel().id().asLongText())) {
+					NotifyDeviceMgr.getInstance().removeDevice(key.get());
+				}
+	    	}
+    	} catch(Exception e) {
+    		throw e;
+    	} finally {
+    		ctx.channel().close();
     	}
-    	
-    	ctx.channel().close();
     	
         super.exceptionCaught(ctx,cause);
     }
@@ -47,20 +51,24 @@ public class NsMessageHandler extends SimpleChannelInboundHandler<Message> {
 	protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
 		if (!ProcessorMgr.getInstance().execute(msg , ctx)){
 			if (ctx.channel() != null) {
-				Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);				
-				if (key != null && key.get() != null) {
-					logger.error("server handling error, the channel [target:" 
-							+ ctx.channel().id().asLongText() + " source:" + 
-							NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
-							+ "] will be closed.");
-			    	
-					if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
-							ctx.channel().id().asLongText())) {
-						NotifyDeviceMgr.getInstance().removeDevice(key.get());
+				try {
+					Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);				
+					if (key != null && key.get() != null) {
+						logger.debug("server handling error, the channel [target:" 
+								+ ctx.channel().id().asLongText() + " source:" + 
+								NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
+								+ "] will be closed.");
+				    	
+						if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
+								ctx.channel().id().asLongText())) {
+							NotifyDeviceMgr.getInstance().removeDevice(key.get());
+						}
 					}
-				}
-				
-				ctx.channel().close();
+				} catch(Exception e) {
+		    		throw e;
+		    	} finally {
+		    		ctx.channel().close();
+		    	}
 			}
 		}
 	}
@@ -70,39 +78,47 @@ public class NsMessageHandler extends SimpleChannelInboundHandler<Message> {
 		if (IdleStateEvent.class.isAssignableFrom(evt.getClass())) {  
             IdleStateEvent event = (IdleStateEvent) evt;  
             if (event.state() == IdleState.ALL_IDLE && ctx.channel() != null) {
-            	Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);
-            	if (key != null && key.get() != null) {
-					logger.warn("write/read idle handler has been triggered, the channel [target:" 
-							+ ctx.channel().id().asLongText() + " source:" + 
-							NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
-							+ "] will be closed.");
-					
-					if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
-							ctx.channel().id().asLongText())) {
-						NotifyDeviceMgr.getInstance().removeDevice(key.get());
-					}
+            	try {
+	            	Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);
+	            	if (key != null && key.get() != null) {
+						logger.warn("write/read idle handler has been triggered, the channel [target:" 
+								+ ctx.channel().id().asLongText() + " source:" + 
+								NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
+								+ "] will be closed.");
+						
+						if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
+								ctx.channel().id().asLongText())) {
+							NotifyDeviceMgr.getInstance().removeDevice(key.get());
+						}
+	            	}
+            	} catch(Exception e) {
+            		throw e;
+            	} finally {
+            		ctx.channel().close();
             	}
-				
-				ctx.channel().close();
             }
         }
 	}
 	
 	@Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-    	Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);
-    	if (key != null && key.get() != null) {
-	    	logger.warn("handle removed, the channel [target:" 
-					+ ctx.channel().id().asLongText() + " source channel:" + 
-					NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
-					+ "] could be closed.");
-	    	
-	    	if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
-					ctx.channel().id().asLongText())) {
-				NotifyDeviceMgr.getInstance().removeDevice(key.get());
-			}
+		try {
+	    	Attribute<String> key = ctx.channel().attr(NsChannelAttrKey.DT_CHANNEL_KEY);
+	    	if (key != null && key.get() != null) {
+		    	logger.debug("handle removed, the channel [target:" 
+						+ ctx.channel().id().asLongText() + " source channel:" + 
+						NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText()
+						+ "] could be closed.");
+		    	
+		    	if (NotifyDeviceMgr.getInstance().getChannel(key.get()).id().asLongText().equals(
+						ctx.channel().id().asLongText())) {
+					NotifyDeviceMgr.getInstance().removeDevice(key.get());
+				}
+	    	} 
+    	} catch(Exception e) {
+    		throw e;
+    	} finally {
+    		ctx.channel().close();
     	}
-        
-        ctx.channel().close();
     }
 }

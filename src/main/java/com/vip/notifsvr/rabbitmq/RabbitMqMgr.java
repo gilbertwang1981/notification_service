@@ -65,12 +65,9 @@ public class RabbitMqMgr {
 	            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)  
 	                    throws IOException {            	
 	            	PubMessage obj = mapper.readValue(new String(body, "UTF-8") , PubMessage.class);
-	            	
-	            	if (!Publisher.getInstance().publish(obj.getDeviceToken() , obj.getContent() , obj.getTopic())){
-	            		logger.warn("publish message failed. " + obj.getDeviceToken() + "/" + obj.getContent());
+	            	if (Publisher.getInstance().publish(obj.getDeviceToken() , obj.getContent() , obj.getTopic())){
+	            		send2Kafka(obj);
 	            	}
-	            	
-	            	send2Kafka(obj);
 	            }  
 	        };
 	        
