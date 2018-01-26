@@ -27,23 +27,36 @@ public class NsStatJob extends Thread {
 			try {
 				Thread.sleep(NsConstDefinition.MAX_NS_STAT_JOB_INTERVAL);
 				
+				Integer activeDevices = NotifyDeviceMgr.getInstance().getActiveDevice();
+				Long successCtr = NotifyDeviceMgr.getInstance().getStatCtr(true);
+				Long failedCtr = NotifyDeviceMgr.getInstance().getStatCtr(false); 
+				Long acksCtr = NotifyDeviceMgr.getInstance().getAcksCtr();
+				Long currentTimestamp = System.currentTimeMillis();
+				
 				RedisMgr.getInstance().set(NsConstDefinition.CTR_ACTIVE_DEVICE_NAME + "_" + 
 						InetAddress.getLocalHost().getHostName() , 
-						NotifyDeviceMgr.getInstance().getActiveDevice().toString());
+						activeDevices.toString());
 				
 				RedisMgr.getInstance().set(NsConstDefinition.CTR_FAIL_CTR_NAME + "_" + 
 						InetAddress.getLocalHost().getHostName() , 
-						NotifyDeviceMgr.getInstance().getStatCtr(false).toString());
+						failedCtr.toString());
 				
 				RedisMgr.getInstance().set(NsConstDefinition.CTR_SUCCESS_CTR_NAME + "_" + 
 						InetAddress.getLocalHost().getHostName() , 
-						NotifyDeviceMgr.getInstance().getStatCtr(true).toString());
+						successCtr.toString());
+				
+				RedisMgr.getInstance().set(NsConstDefinition.CTR_PUBCOMP_NAME + "_" + 
+						InetAddress.getLocalHost().getHostName() , 
+						acksCtr.toString());
 				
 				RedisMgr.getInstance().set(NsConstDefinition.CTR_ONLINE_HC + "_" + 
 						InetAddress.getLocalHost().getHostName() , 
-						Long.toString(System.currentTimeMillis()));
+						Long.toString(currentTimestamp));
+				
+				logger.info("active devices:{} , success:{} , failed:{} , pubcomp:{} , current timestamp:{}" , 
+						activeDevices , successCtr , failedCtr , acksCtr , currentTimestamp);
 			} catch (Exception e) {
-				logger.error("run [NsStatJob] Job failed:" + e.getMessage());
+				logger.error("run [NsStatJob] Job failed:" + e);
 			}
 		}
 	}

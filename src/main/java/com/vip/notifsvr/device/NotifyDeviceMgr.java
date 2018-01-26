@@ -26,6 +26,7 @@ public class NotifyDeviceMgr {
 	
 	private AtomicLong successCtr = new AtomicLong(0);
 	private AtomicLong failCtr = new AtomicLong(0);
+	private AtomicLong acksCtr = new AtomicLong(0);
 	
 	private ObjectMapper mapper = new ObjectMapper();
 	
@@ -77,6 +78,16 @@ public class NotifyDeviceMgr {
 				failCtr.set(0);
 			}
 		}
+	}
+	
+	public void addAcksCtr() {
+		if (acksCtr.incrementAndGet() > (Long.MAX_VALUE - 1)) {
+			acksCtr.set(0);
+		}
+	}
+	
+	public Long getAcksCtr(){
+		return acksCtr.get();
 	}
 	
 	public Long getStatCtr(boolean isSuccess) {
@@ -146,6 +157,12 @@ public class NotifyDeviceMgr {
 		
 		if (devices.remove(deviceToken) == null) {
 			logger.warn("can not find the device in the memory map." + deviceToken);
+		}
+		
+		String targetPnsId = RedisMgr.getInstance().get(deviceToken);
+		if (!StringUtil.isNullOrEmpty(targetPnsId) && 
+				NsConfigMgr.getInstance().getConfig().getPnsId().equals(targetPnsId)) {
+			RedisMgr.getInstance().del(deviceToken);
 		}
 		
 		if (!NsDLockUtil.getInstance().unlock(NsConstDefinition.NS_DLOCK_PREFIX + deviceToken)){

@@ -23,6 +23,8 @@ public interface NsConstDefinition {
 	
 	public static final String CTR_ONLINE_HC = "ns_counter_online_health_check";
 	
+	public static final String CTR_PUBCOMP_NAME = "ns_counter_pubcomp";
+	
 	public static final String REPORT_KAFKA_TOPIC_NAME = "reportUMC";
 	
 	public static final String LOGIN_KAFKA_TOPIC_NAME = "loginTopic";
